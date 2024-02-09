@@ -1,11 +1,25 @@
 wasm4keyboard = {
     _enabled: false,
+    document: null,
     console: null,
     notifications: null,
     clock: false,
     
+    _findConsole: function() {
+        let console = document.getElementsByTagName("wasm4-app")[0];
+        if (console != null) return [console, document];
+        
+        // wasm4.org embeds games in iframes, so we should check them too.
+        for (const iframe of document.getElementsByTagName("iframe")) {
+            let elements = iframe.contentDocument.getElementsByTagName("wasm4-app");
+            if (elements.length > 0) return [elements[0], iframe.contentDocument];
+        }
+        
+        return [null, null];
+    },
+    
     initialize: function() {
-        this.console = document.getElementsByTagName("wasm4-app")[0];
+        [this.console, this.document] = this._findConsole();
 
         if (console == null) {
             console.error("[WASM-4 Keyboard] <wasm4-app> couldn't be found!");
@@ -14,7 +28,7 @@ wasm4keyboard = {
         
         this.notifications = this.console.shadowRoot.children[0].children[0];
         
-        document.addEventListener('keydown', (e) => {     
+        this.document.addEventListener('keydown', (e) => {     
             if (e.keyCode == 13 && e.ctrlKey) {
                 wasm4keyboard.enabled = !wasm4keyboard.enabled;
             }
@@ -34,7 +48,7 @@ wasm4keyboard = {
             return false;
         });
         
-        document.addEventListener('keyup', (e) => {
+        this.document.addEventListener('keyup', (e) => {
             if (!wasm4keyboard.enabled || wasm4keyboard.console.showMenu) return;
             
             e.preventDefault();
